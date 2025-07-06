@@ -1,0 +1,4 @@
+# Fichiers de sauvegarde temporaires
+*~
+# Fichier de config local
+.env
