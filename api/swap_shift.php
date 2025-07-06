@@ -52,6 +52,8 @@ switch ($method) {
         $data = json_decode(file_get_contents('php://input'), true);
 
         // Validation des champs obligatoires
+        // TODO : vérifier que post_id et requester_id existent dans les tables correspondantes
+        // TODO : vérifier que le post_id n'est pas déjà occupé par un autre swap        
         if (
             empty($data['post_id']) ||
             empty($data['requester_id'])
@@ -81,15 +83,99 @@ switch ($method) {
         break;
 
     case 'PUT':
-        // TODO : mise à jour
-        http_response_code(501);
-        echo json_encode(['error' => 'PUT non encore implémenté']);
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        // quelle demande d'échange ?
+        $id = $data['swap'] ?? null;
+        if ($id === null) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Champ swap obligatoire']);
+            exit;
+        }
+
+        try {
+            // Vérifier que la demande existe
+            $stmt = $pdo->prepare("SELECT * FROM swap_shift WHERE id = ?");
+            $stmt->execute([$id]);
+            $request = $stmt->fetch();
+            if (!$request) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Demande non trouvée']);
+                exit;
+            }
+
+            // Préparation des parties à mettre à jour
+            $fields = [];
+            $params = [];
+
+            // selon les champs reçus, on prépare la requête de mise à jour
+
+            if (isset($data['candidat'])) {
+                $fields[] = 'receiver_id = :receiver_id';
+                $params[':receiver_id'] = $data['candidat'];
+            }
+
+            if (isset($data['superviseur']) && isset($data['statut'])) {
+                $fields[] = 'validator_id = :validator_id';
+                $params[':validator_id'] = $data['superviseur'];
+                $fields[] = 'status = :status';
+                $params[':status'] = $data['statut'];
+                $fields[] = 'validated_at = NOW()';
+            }
+
+            $params[':id'] = $id;
+            $sql = "UPDATE swap_shift SET " . implode(', ', $fields) . " WHERE id = :id";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+
+            // Retourne la demande mise à jour
+            $stmt = $pdo->prepare("SELECT * FROM swap_shift WHERE id = ?");
+            $stmt->execute([$id]);
+            $updatedRequest = $stmt->fetch();
+
+            echo json_encode($updatedRequest);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Erreur lors de la mise à jour', 'message' => $e->getMessage()]);
+        }
         break;
 
+
     case 'DELETE':
-        // TODO : suppression
-        http_response_code(501);
-        echo json_encode(['error' => 'DELETE non encore implémenté']);
+        // suppression en base, mais il serait préférable de faire un soft delete (ex : etat = 'deleted')
+        if (!isset($_GET['swap'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Champ swap oligatoire']);
+            break;
+        }
+        $swapId = intval($_GET['swap']);
+
+        if ($swapId <= 0) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Identifiant "swap" invalide.']);
+            break;
+        }
+
+        try {
+            $stmt = $pdo->prepare("SELECT id FROM swap_shift WHERE id = :id");
+            $stmt->execute([':id' => $swapId]);
+            $result = $stmt->fetch();
+
+            if (!$result) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Échange introuvable.']);
+                break;
+            }
+
+            $stmt = $pdo->prepare("DELETE FROM swap_shift WHERE id = :id");
+            $stmt->execute([':id' => $swapId]);
+
+            http_response_code(204);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Erreur lors de la suppression.']);
+        }
+
         break;
 
     default:

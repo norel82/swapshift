@@ -76,3 +76,32 @@ curl -X POST http://localhost:8000/api/swap_shift.php \
   "requester_id": 123
 }'
 ```
+### Mise à jour d'une demande (par un candidat)
+```bash
+curl -X PUT http://localhost:8000/api/swap_shift.php \
+-H "Content-Type: application/json" \
+-d '{
+  "swap": 4,
+  "candidat": 5
+}'
+```
+### Mise à jour d'un statut d'une demande (par un responsable)
+```bash
+curl -X PUT http://localhost:8000/api/swap_shift.php \
+-H "Content-Type: application/json" \
+-d '{
+  "swap": 4,
+  "superviseur": 15,
+  "statut": "rejected"
+}'
+```
+### Suppression d'une demande (pour exemple, généralement on établit un état supprimer plutôt que delete réellement une data en base)
+```bash
+curl -X DELETE "http://localhost:8000/api/swap_shift.php?swap=3"
+```
+
+
+### points d'améliorations :
+- Lorsqu’une demande est refusée pour un candidat, générer automatiquement une nouvelle demande vide pour permettre à d’autres agents de postuler.
+- Ajout tests unitaires (ex : PHPUnit)
+- Implémenter un système de pagination ou de filtres sur les demandes
