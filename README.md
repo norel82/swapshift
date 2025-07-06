@@ -67,3 +67,12 @@ curl http://localhost:8000/api/swap_shift.php
 ```bash
 curl http://localhost:8000/api/swap_shift.php?id=1
 ```
+### Création d'une nouvelle demande
+```bash
+curl -X POST http://localhost:8000/api/swap_shift.php \
+-H "Content-Type: application/json" \
+-d '{
+  "post_id": 1,
+  "requester_id": 123
+}'
+```

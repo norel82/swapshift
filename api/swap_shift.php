@@ -48,9 +48,36 @@ switch ($method) {
         break;
 
     case 'POST':
-        // TODO : création
-        http_response_code(501);
-        echo json_encode(['error' => 'POST non encore implémenté']);
+
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        // Validation des champs obligatoires
+        if (
+            empty($data['post_id']) ||
+            empty($data['requester_id'])
+        ) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Les champs "post_id" et "requester_id" sont obligatoires.']);
+            exit;
+        }
+
+        try {
+            $stmt = $pdo->prepare("
+            INSERT INTO swap_shift (post_id, requester_id, status)
+            VALUES (:post_id, :requester_id, 'pending')
+        ");
+
+            $stmt->execute([
+                ':post_id' => $data['post_id'],
+                ':requester_id' => $data['requester_id'],
+            ]);
+
+            http_response_code(201);
+            echo json_encode(['success' => 'Demande créée avec succès.']);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Erreur lors de la création de la demande']);
+        }
         break;
 
     case 'PUT':
