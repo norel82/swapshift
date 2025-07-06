@@ -45,3 +45,25 @@ mysql -u root -p < sql/schema.sql
 | `validated_at`     | `DATETIME`     | Date et heure de validation/refus (nullable).               |
 | `validator_id`     | `INT UNSIGNED` | Identifiant du manager validant/refusant (nullable).        |
 
+
+## Étape 2 : Configuration du fichier .env
+Créer un fichier .env à partir de l'exemple fourni.
+```bash
+cp .env.example .env
+```
+Adapter les valeurs suivantes :
+```bash
+DB_USER=root
+DB_PASS=votre_mot_de_passe
+```
+
+
+##  Étape 3 : Exemples d'utilisation des api
+### Listing complet
+```bash
+curl http://localhost:8000/api/swap_shift.php
+```
+### show d'une demande
+```bash
+curl http://localhost:8000/api/swap_shift.php?id=1
+```
